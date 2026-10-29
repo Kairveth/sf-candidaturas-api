@@ -29,4 +29,16 @@ public with sharing class CandidaturaTriggerHandler {
     public static Set<String> permitidas(String estado) {
         return TRANSICIONES.containsKey(estado) ? TRANSICIONES.get(estado) : new Set<String>();
     }
+
+        public static void encolaEntrevistas(List<Candidatura__c> nuevas, Map<Id, Candidatura__c> antiguas) {
+        Set<Id> ids = new Set<Id>();
+        for (Candidatura__c cand : nuevas) {
+            if (cand.Estado__c == 'Entrevista' && antiguas.get(cand.Id).Estado__c != 'Entrevista') {
+                ids.add(cand.Id);
+            }
+        }
+        if (!ids.isEmpty()) {
+            System.enqueueJob(new CandidaturaNotificacionQueueable(ids));
+        }
+    }
 }
