@@ -1,0 +1,15 @@
+<template>
+    <lightning-card title="Estado de la candidatura">
+        <div class="slds-p-around_medium">
+            <p>Estado actual: <strong>{estado}</strong></p>
+            <template if:true={error}>
+                <p class="slds-text-color_error slds-m-vertical_small">{error}</p>
+            </template>
+            <template for:each={listaBotones} for:item="boton">
+                <lightning-button key={boton} label={boton} variant="neutral" data-estado={boton}
+                    onclick={handleClick} class="slds-m-right_small slds-m-bottom_small">
+                </lightning-button>
+            </template>
+        </div>
+    </lightning-card>
+</template>

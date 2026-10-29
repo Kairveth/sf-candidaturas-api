@@ -25,4 +25,8 @@ public with sharing class CandidaturaTriggerHandler {
             }
         }
     }
+
+    public static Set<String> permitidas(String estado) {
+        return TRANSICIONES.containsKey(estado) ? TRANSICIONES.get(estado) : new Set<String>();
+    }
 }
