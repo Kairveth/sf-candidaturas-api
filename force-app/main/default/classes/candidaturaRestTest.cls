@@ -40,4 +40,11 @@ private class candidaturaRestTest {
         llama('no es json');
         System.assertEquals(400, RestContext.response.statusCode);
     }
+
+    @IsTest
+    static void estadoInvalidoDevuelve409() {
+        llama('{"idExterno":"CAND-409","nombre":"Transicion","estado":"Recibida"}');
+        llama('{"idExterno":"CAND-409","estado":"Oferta"}');
+        System.assertEquals(409, RestContext.response.statusCode);
+    }
 }
