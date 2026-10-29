@@ -1,7 +1,7 @@
 //DEMO-1003
 public with sharing class CandidaturaEstadoController {
 
-    @AuraEnabled
+     @AuraEnabled(cacheable=true)
     public static List<String> transicionesPermitidas(Id candidaturaId) {
         List<Candidatura__c> lista = [
             SELECT Estado__c FROM Candidatura__c WHERE Id = :candidaturaId WITH USER_MODE LIMIT 1
@@ -14,10 +14,15 @@ public with sharing class CandidaturaEstadoController {
 
     @AuraEnabled
     public static void cambiaEstado(Id candidaturaId, String nuevoEstado) {
+        if (!Schema.sObjectType.Candidatura__c.isUpdateable()
+            || !Schema.sObjectType.Candidatura__c.fields.Estado__c.isUpdateable()) {
+            throw error('Sin permiso para cambiar el estado');
+        }
         Candidatura__c cand = new Candidatura__c(Id = candidaturaId, Estado__c = nuevoEstado);
-        Database.SaveResult sr = Database.update(cand, false, AccessLevel.USER_MODE);
-        if (!sr.isSuccess()) {
-            throw error(sr.getErrors()[0].getMessage());
+        try {
+            update cand;
+        } catch (DmlException e) {
+            throw error(e.getDmlMessage(0));
         }
     }
 
