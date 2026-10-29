@@ -5,6 +5,10 @@ import ESTADO from '@salesforce/schema/Candidatura__c.Estado__c';
 import transicionesPermitidas from '@salesforce/apex/CandidaturaEstadoController.transicionesPermitidas';
 import cambiaEstado from '@salesforce/apex/CandidaturaEstadoController.cambiaEstado';
 
+function mensaje(err) {
+    return err.body ? err.body.message : err.message;
+}
+
 export default class CandidaturaEstado extends LightningElement {
     @api recordId;
     error;
@@ -12,13 +16,19 @@ export default class CandidaturaEstado extends LightningElement {
     botones;
 
     @wire(getRecord, { recordId: '$recordId', fields: [ESTADO] })
-    cargaRegistro(resultado) {
+    wiredRegistro(resultado) {
         this.registro = resultado;
+        if (resultado.error) {
+            this.error = mensaje(resultado.error);
+        }
     }
 
     @wire(transicionesPermitidas, { candidaturaId: '$recordId' })
-    cargaBotones(resultado) {
+    wiredBotones(resultado) {
         this.botones = resultado;
+        if (resultado.error) {
+            this.error = mensaje(resultado.error);
+        }
     }
 
     get estado() {
@@ -32,11 +42,11 @@ export default class CandidaturaEstado extends LightningElement {
     async handleClick(event) {
         this.error = undefined;
         try {
-            await cambiaEstado({ candidaturaId: this.recordId, nuevoEstado: event.target.dataset.estado });
+            await cambiaEstado({ candidaturaId: this.recordId, nuevoEstado: event.currentTarget.dataset.estado });
             await notifyRecordUpdateAvailable([{ recordId: this.recordId }]);
             await refreshApex(this.botones);
         } catch (e) {
-            this.error = e.body ? e.body.message : e.message;
+            this.error = mensaje(e);
         }
     }
 }
