@@ -1,0 +1,275 @@
+{
+  "info": {
+    "_postman_id": "7fee8d68-e5a9-4009-86b5-cdc80e597e85",
+    "name": "Candidaturas",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 al pedir token\", () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set(\"access_token\", pm.response.json().access_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "grant_type", "value": "client_credentials" },
+            { "key": "client_id", "value": "{{client_id}}" },
+            { "key": "client_secret", "value": "{{client_secret}}" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/services/oauth2/token",
+          "host": ["{{base_url}}"],
+          "path": ["services", "oauth2", "token"]
+        }
+      }
+    },
+    {
+      "name": "Crear Candidatura",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test(\"201 al crear\", () => pm.response.to.have.status(201));"]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"idExterno\": \"PM-001\", \"nombre\": \"Ana Prueba\", \"estado\": \"Recibida\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/services/apexrest/candidaturas",
+          "host": ["{{base_url}}"],
+          "path": ["services", "apexrest", "candidaturas"]
+        }
+      }
+    },
+    {
+      "name": "Reenviar misma clave",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test(\"200 al reenviar\", () => pm.response.to.have.status(200));"]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"idExterno\": \"PM-001\", \"nombre\": \"Ana Prueba corregida\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/services/apexrest/candidaturas",
+          "host": ["{{base_url}}"],
+          "path": ["services", "apexrest", "candidaturas"]
+        }
+      }
+    },
+    {
+      "name": "Sin clave",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test(\"400 sin clave\", () => pm.response.to.have.status(400));"]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\": \"Sin clave\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/services/apexrest/candidaturas",
+          "host": ["{{base_url}}"],
+          "path": ["services", "apexrest", "candidaturas"]
+        }
+      }
+    },
+    {
+      "name": "Buscar Candidatura",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 al leer\", () => pm.response.to.have.status(200));",
+              "pm.test(\"estado Recibida\", () => pm.expect(pm.response.json().Estado__c).to.eql(\"Recibida\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/services/data/v68.0/sobjects/Candidatura__c/IdExterno__c/PM-001",
+          "host": ["{{base_url}}"],
+          "path": ["services", "data", "v68.0", "sobjects", "Candidatura__c", "IdExterno__c", "PM-001"]
+        }
+      }
+    },
+    {
+      "name": "Actualizar estado válido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test(\"204 al actualizar\", () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"Estado__c\": \"En revisión\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/services/data/v68.0/sobjects/Candidatura__c/IdExterno__c/PM-001",
+          "host": ["{{base_url}}"],
+          "path": ["services", "data", "v68.0", "sobjects", "Candidatura__c", "IdExterno__c", "PM-001"]
+        }
+      }
+    },
+    {
+      "name": "Transición inválida",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"400 en transición inválida\", () => pm.response.to.have.status(400));",
+              "pm.test(\"error del trigger\", () => pm.expect(pm.response.json()[0].errorCode).to.eql(\"FIELD_CUSTOM_VALIDATION_EXCEPTION\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"Estado__c\": \"Oferta\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/services/data/v68.0/sobjects/Candidatura__c/IdExterno__c/PM-001",
+          "host": ["{{base_url}}"],
+          "path": ["services", "data", "v68.0", "sobjects", "Candidatura__c", "IdExterno__c", "PM-001"]
+        }
+      }
+    },
+    {
+      "name": "Borrar Candidatura",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test(\"204 al borrar\", () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/services/data/v68.0/sobjects/Candidatura__c/IdExterno__c/PM-001",
+          "host": ["{{base_url}}"],
+          "path": ["services", "data", "v68.0", "sobjects", "Candidatura__c", "IdExterno__c", "PM-001"]
+        }
+      }
+    },
+    {
+      "name": "Leer tras borrar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test(\"404 tras borrar\", () => pm.response.to.have.status(404));"]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/services/data/v68.0/sobjects/Candidatura__c/IdExterno__c/PM-001",
+          "host": ["{{base_url}}"],
+          "path": ["services", "data", "v68.0", "sobjects", "Candidatura__c", "IdExterno__c", "PM-001"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "access_token", "value": "" }
+  ]
+}
