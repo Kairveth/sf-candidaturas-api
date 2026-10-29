@@ -1,58 +1,71 @@
-# Salesforce DX Project
+# sf-candidaturas-api
 
-Salesforce DX is a development approach that brings source-driven development, team collaboration, and continuous integration to the Salesforce Platform. Instead of working directly in an org through a web browser, you work with metadata as source files in a local DX project, track changes in version control, and deploy through automated processes.
+API y automatizaciones en Salesforce para gestionar candidaturas de empleo: entrada por REST, control de estados, notificación a un destino externo, retención RGPD y una vista de estado en el registro.
 
-This project template gets you started with the tools and structure you need to build Salesforce applications using source control, scratch orgs, and the Salesforce CLI.
+Proyecto de portfolio sobre una Developer Edition. Los tickets (DEMO-100X) son ficticios y sirven para organizar el trabajo por ramas y PR.
 
-## Prerequisites
+## Qué incluye
 
-Before you start, make sure you have:
+| Pieza | Qué hace |
+|---|---|
+| `CandidaturaRest` | Endpoint `POST /services/apexrest/candidaturas`. Crea o actualiza por `IdExterno__c`. |
+| `CandidaturaService` | Mapea el payload, hace el upsert y traduce los errores de transición a respuestas HTTP. |
+| `CandidaturaTrigger` + `CandidaturaTriggerHandler` | Valida transiciones de estado en `before update`. Encola la notificación en `after update`. |
+| `CandidaturaNotificacionQueueable` | Envía las candidaturas que pasan a `Entrevista` en un solo callout por lote. |
+| `CandidaturaReintentoFinalizer` | Reencola una vez si el job falla. Un segundo fallo se registra en el debug log. |
+| `CandidaturaRetencionBatch` | Batch RGPD: anonimiza (renombra) las candidaturas cuya `FechaDescarte__c` ya venció. |
+| `CandidaturaEstadoController` + LWC `candidaturaEstado` | Botones de transición en la ficha, solo con las transiciones permitidas. |
+| `postman/candidaturas.postman_collection.json` | 9 peticiones que prueban el CRUD y las respuestas de error. |
 
-- **Salesforce CLI** - Download from [developer.salesforce.com/tools/salesforcecli](https://developer.salesforce.com/tools/salesforcecli). See [Install Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm) for details.
-- **VS Code with Salesforce Extension Pack** - See [Installation Instructions](https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/install.html) for details. Includes the Agentforce Vibes extension.
-- **A development org** - Sign up for a free Developer Edition org [here](https://developer.salesforce.com/signup).
-- **Dev Hub enabled** (optional, required to create scratch orgs) - You can enable Dev Hub in your development org under Setup > Dev Hub.  See [Provide Developers Access to Salesforce DX Tools](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_dx_tools.htm).
+## Decisiones
 
-## Project Structure
+**API REST propia frente a la API estándar.** La API estándar sirve para CRUD genérico. Aquí hace falta un contrato con idempotencia por `idExterno`, códigos HTTP concretos (400, 409) y validación de transiciones. Con la API estándar, esa lógica tendría que vivir en el sistema que llama.
 
-Your DX project follows this structure:
+**Lógica de transiciones en el trigger, no en el endpoint.** Así la regla se aplica tanto a la API como a la ficha, a la edición manual y a cualquier otro origen. El trigger solo delega en el handler.
 
-- **`force-app/main/default/`** - Your metadata source files live in this default package directory. You can configure additional package directories in the `sfdx-project.json` file.
-- **`config/`** - Scratch org definitions and project settings
-- **`scripts/`** - Automation scripts for common tasks
-- **`sfdx-project.json`** - Project manifest that defines package directories, namespace, API version, and other project-level settings
+**Validación en `before update`, notificación en `after update`.** La validación cambia el mismo registro y no hace DML. La notificación necesita el registro ya guardado y no hace callouts desde el trigger.
 
-See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm).
+**Un callout por lote, no por registro.** El trigger recoge todos los IDs de la transacción y encola un único Queueable. Con 200 registros, son 200 filas en el payload y una petición.
 
-## Get Started
+**Reintento con Finalizer, no con Schedulable.** El reintento depende del resultado del job, no de un calendario. Un Schedulable añadiría complejidad sin beneficio.
 
-Ready to start developing? The [Get Started with Salesforce DX](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_get_started_dx.htm) guide walks you through your first project, from creating a scratch org to creating a simple Apex class or LWC to deploying your code to a sandbox.
+**Batch solo para retención.** Es el único proceso que recorre todos los registros elegibles en bloques con estado. El resto va en Queueable.
 
-## Common Salesforce CLI Commands
+**Permisos.** Las clases usan `with sharing` y el controlador valida acceso con `isUpdateable()` y `WITH USER_MODE`.
 
-Here are common CLI commands that you'll use the most:
+**Sin credenciales en el repo.** El destino y su autenticación viven en Named Credential y External Credential de la org.
 
-- `sf org login web`: Authorize an org
-- `sf org open`: Open your org in a browser
-- `sf org create scratch`: Create a scratch org
-- `sf project deploy start`: Deploy metadata to your org
-- `sf project retrieve start`: Retrieve metadata from your org
-- `sf template generate <artifact>`: Scaffold new components, such as Apex classes and triggers, LWC components, Lightning apps, and more
-- `sf apex <command>`: Run Apex tests, run anonymous Apex blocks, and view logs
-- `sf data <command>`: Work with test data
-- `sf alias <command>`: Manage org aliases
-- `sf config <command>`: Configure CLI settings
+## Cómo probarlo
 
-## Use Agentforce Vibes to Build Lightning Apps
+1. Desplegar en una Developer Edition propia:
 
-Transform your ideas into custom Lightning apps that extend CRM workflows directly in Lightning Experience. Through natural conversations with Agentforce Vibes, implement custom objects and fields, complex business logic, and dynamic UI components. See [Build a Lightning App Using Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/lexapp-overview.html).
+   ```
+   sf project deploy start --source-dir force-app --target-org <tu-org>
+   ```
 
-## Additional Resources
+2. En Setup, crear la External Credential `Destino_Candidaturas` (No Authentication, principal `Anonimo`) y la Named Credential `Destino_Candidaturas` apuntando a tu URL de destino. Sin ellas, el Queueable falla en la org nueva. La URL no va en el repo.
+3. En Lightning App Builder, asignar la página `Candidatura_Record_Page` a `Candidatura__c`. El deploy no la activa.
+4. Importar `postman/candidaturas.postman_collection.json` y configurar `client_id`, `client_secret` y `base_url` en el entorno.
+5. Ejecutar las peticiones en orden: Login, crear, reenviar misma clave, sin clave, buscar, actualizar estado, transición inválida, borrar, leer tras borrar.
+6. Abrir una candidatura en la org y probar los botones del componente de estado.
+7. Para la retención RGPD, ejecutar en Developer Console (Anonymous Apex): `Database.executeBatch(new CandidaturaRetencionBatch());`. Confirmar antes que el constructor no pide parámetros.
 
-- [Agentforce Vibes Developer Guide](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/einstein-overview.html)
-- [Salesforce CLI Installation Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/)
-- [Salesforce CLI Plugin Development Guide](https://developer.salesforce.com/docs/platform/salesforce-cli-plugin/guide/conceptual-overview.html)
-- [Salesforce VS Code Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
+## Límites y escalado
 
+Volumen supuesto, sin dato real: 1.000 candidaturas al día, con lotes de hasta 200 registros por transacción.
+
+- **Hoy:** un job por transacción de trigger. No verificado: que aguante lotes de cientos de registros sin problemas.
+- **10 veces más (10.000 al día):** partir el lote en bloques de 100 dentro del Queueable o encolar varios jobs desde el trigger.
+- **Más de 1 millón de registros:** pasar la notificación a Batch con estado y revisar índices en `Estado__c` e `IdExterno__c`.
+- **Destino:** si el endpoint externo cae, el reintento cubre un fallo. Para más, hace falta una cola propia o Platform Events.
+
+No verificado: los límites de gobernador del job con 10.000 registros en una sola transacción.
+
+## Estado
+
+- Desplegado y probado en Developer Edition con dry run y deploy real.
+- Pendiente: test del reintento del Finalizer (cobertura 0%) y Permission Set `Integracion_Candidaturas`.
+
+## Aviso
+
+Los tickets DEMO-100X son ficticios. El proyecto no tiene datos reales de personas.
