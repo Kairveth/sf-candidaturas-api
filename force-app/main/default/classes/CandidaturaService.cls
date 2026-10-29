@@ -1,6 +1,8 @@
+//DEMO-1001
 public with sharing class CandidaturaService {
 
     public class CandidaturaException extends Exception {}
+    public class TransicionException extends Exception {}
 
     public class Result {
         public Id id;
@@ -12,9 +14,16 @@ public with sharing class CandidaturaService {
         if (body.containsKey('nombre')) {
             cand.Name = (String) body.get('nombre');
         }
+        if (body.containsKey('estado')) {
+            cand.Estado__c = (String) body.get('estado');
+        }
         Database.UpsertResult ur = Database.upsert(cand, Candidatura__c.IdExterno__c, false);
         if (!ur.isSuccess()) {
-            throw new CandidaturaException(ur.getErrors()[0].getMessage());
+            Database.Error err = ur.getErrors()[0];
+            if (err.getStatusCode() == StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION) {
+                throw new TransicionException(err.getMessage());
+            }
+            throw new CandidaturaException(err.getMessage());
         }
         Result r = new Result();
         r.id = ur.getId();

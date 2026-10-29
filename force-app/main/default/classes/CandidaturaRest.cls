@@ -17,6 +17,8 @@ global with sharing class CandidaturaRest {
             responde(res, result.created ? 201 : 200, JSON.serialize(result));
         } catch (CandidaturaService.CandidaturaException e) {
             responde(res, 400, JSON.serialize(new Map<String, String>{ 'error' => e.getMessage() }));
+        } catch (CandidaturaService.TransicionException e) {
+            responde(res, 409, JSON.serialize(new Map<String, String>{ 'error' => e.getMessage() }));
         } catch (Exception e) {
             System.debug(LoggingLevel.ERROR, 'CandidaturaRest: ' + e.getTypeName());
             responde(res, 500, '{"error":"error interno"}');
