@@ -18,6 +18,10 @@ public with sharing class CandidaturaTriggerHandler {
             Set<String> permitidas = TRANSICIONES.get(previo);
             if (permitidas == null || !permitidas.contains(cand.Estado__c)) {
                 cand.addError('Transición no válida: ' + previo + ' a ' + cand.Estado__c);
+                continue;
+            }
+            if (cand.Estado__c == 'Descartada') {
+                cand.FechaDescarte__c = Date.today();
             }
         }
     }
