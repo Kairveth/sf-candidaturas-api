@@ -19,6 +19,16 @@
         <field>Candidatura__c.IdExterno__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+    <editable>true</editable>
+    <field>Candidatura__c.EstadoEnvio__c</field>
+    <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Candidatura__c.UltimoErrorEnvio__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Integracion Candidaturas</label>
     <objectPermissions>
