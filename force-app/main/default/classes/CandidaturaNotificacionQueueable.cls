@@ -25,6 +25,18 @@ public with sharing class CandidaturaNotificacionQueueable implements Queueable,
         if (res.getStatusCode() >= 300) {
             throw new CalloutException('HTTP ' + res.getStatusCode());
         }
+        marcarEnviado(lote);
+    }
+
+    private static void marcarEnviado(List<Candidatura__c> lote) {
+        for (Candidatura__c cand : lote) {
+            cand.EstadoEnvio__c = 'Enviado';
+        }
+        try {
+            Database.update(lote, AccessLevel.USER_MODE);
+        } catch (DmlException e) {
+            System.debug(LoggingLevel.ERROR, 'Envío correcto sin marcar Enviado: ' + lote.size() + ' candidaturas');
+        }
     }
 
     private static List<Map<String, String>> payload(List<Candidatura__c> lote) {
