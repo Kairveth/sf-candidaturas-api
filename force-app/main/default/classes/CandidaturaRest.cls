@@ -1,4 +1,4 @@
-//PENDIENTE-CLAVE
+//DEMO-1008
 @RestResource(urlMapping='/candidaturas/*')
 global with sharing class CandidaturaRest {
 
@@ -19,6 +19,8 @@ global with sharing class CandidaturaRest {
             responde(res, 400, JSON.serialize(new Map<String, String>{ 'error' => e.getMessage() }));
         } catch (CandidaturaService.TransicionException e) {
             responde(res, 409, JSON.serialize(new Map<String, String>{ 'error' => e.getMessage() }));
+        } catch (CandidaturaService.PermisoException e) {
+            responde(res, 403, JSON.serialize(new Map<String, String>{ 'error' => e.getMessage() }));
         } catch (Exception e) {
             System.debug(LoggingLevel.ERROR, 'CandidaturaRest: ' + e.getTypeName());
             responde(res, 500, '{"error":"error interno"}');
