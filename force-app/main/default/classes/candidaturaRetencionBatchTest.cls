@@ -1,4 +1,4 @@
-//DEMO-1002
+//DEMO-1008
 @IsTest
 private class candidaturaRetencionBatchTest {
 
@@ -23,6 +23,7 @@ private class candidaturaRetencionBatchTest {
         Test.stopTest();
 
         System.assertEquals(200, [SELECT COUNT() FROM Candidatura__c WHERE Name = 'Anonimizada']);
+        System.assertEquals(200, [SELECT COUNT() FROM Candidatura__c WHERE Name = 'Anonimizada' AND IdExterno__c = null]);
         System.assertEquals(5, [SELECT COUNT() FROM Candidatura__c WHERE Estado__c = 'Descartada' AND Name != 'Anonimizada']);
     }
 }

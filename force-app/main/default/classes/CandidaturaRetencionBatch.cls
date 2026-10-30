@@ -1,4 +1,4 @@
-//DEMO-1002
+//DEMO-1008
 public with sharing class CandidaturaRetencionBatch implements Database.Batchable<SObject> {
 
     public Database.QueryLocator start(Database.BatchableContext bc) {
@@ -12,6 +12,7 @@ public with sharing class CandidaturaRetencionBatch implements Database.Batchabl
     public void execute(Database.BatchableContext bc, List<Candidatura__c> lote) {
         for (Candidatura__c cand : lote) {
             cand.Name = 'Anonimizada';
+            cand.IdExterno__c = null;
         }
         update lote;
     }
