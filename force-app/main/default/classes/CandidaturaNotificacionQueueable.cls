@@ -1,4 +1,4 @@
-//DEMO-1005
+//DEMO-1008
 public with sharing class CandidaturaNotificacionQueueable implements Queueable, Database.AllowsCallouts {
     private Set<Id> ids;
     private Integer intento;
@@ -18,6 +18,7 @@ public with sharing class CandidaturaNotificacionQueueable implements Queueable,
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:Destino_Candidaturas');
         req.setMethod('POST');
+        req.setTimeout(10000);
         req.setHeader('Content-Type', 'application/json');
         req.setBody(JSON.serialize(payload(lote)));
         HttpResponse res = new Http().send(req);
