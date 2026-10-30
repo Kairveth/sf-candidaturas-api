@@ -47,4 +47,26 @@ private class candidaturaRestTest {
         llama('{"idExterno":"CAND-409","estado":"Oferta"}');
         System.assertEquals(409, RestContext.response.statusCode);
     }
+
+    @IsTest
+    static void sinPermisoDevuelve403SinCrear() {
+        Profile p = [SELECT Id FROM Profile WHERE Name IN ('Standard User', 'Usuario estándar') LIMIT 1];
+        User u = new User(
+            Alias = 'sinperm',
+            Email = 'sinperm@example.com',
+            EmailEncodingKey = 'UTF-8',
+            LastName = 'Prueba',
+            LanguageLocaleKey = 'es',
+            LocaleSidKey = 'es_ES',
+            ProfileId = p.Id,
+            TimeZoneSidKey = 'Europe/Madrid',
+            UserName = 'sinperm' + DateTime.now().getTime() + '@example.com'
+        );
+        insert u;
+        System.runAs(u) {
+            llama('{"idExterno":"CAND-403","nombre":"Sin permiso"}');
+        }
+        System.assertEquals(403, RestContext.response.statusCode);
+        System.assertEquals(0, [SELECT COUNT() FROM Candidatura__c WHERE IdExterno__c = 'CAND-403']);
+    }
 }

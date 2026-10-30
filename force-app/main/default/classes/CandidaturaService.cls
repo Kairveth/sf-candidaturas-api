@@ -1,8 +1,9 @@
-//DEMO-1001
+//DEMO-1008
 public with sharing class CandidaturaService {
 
     public class CandidaturaException extends Exception {}
     public class TransicionException extends Exception {}
+    public class PermisoException extends Exception {}
 
     public class Result {
         public Id id;
@@ -10,6 +11,7 @@ public with sharing class CandidaturaService {
     }
 
     public static Result upsertByIdExterno(Map<String, Object> body) {
+        compruebaPermisos(body);
         Candidatura__c cand = new Candidatura__c(IdExterno__c = (String) body.get('idExterno'));
         if (body.containsKey('nombre')) {
             cand.Name = (String) body.get('nombre');
@@ -29,5 +31,20 @@ public with sharing class CandidaturaService {
         r.id = ur.getId();
         r.created = ur.isCreated();
         return r;
+    }
+
+    private static void compruebaPermisos(Map<String, Object> body) {
+        if (!Schema.sObjectType.Candidatura__c.isCreateable() || !Schema.sObjectType.Candidatura__c.isUpdateable()) {
+            throw new PermisoException('Sin permiso de escritura en Candidatura__c');
+        }
+        if (!Schema.sObjectType.Candidatura__c.fields.IdExterno__c.isUpdateable()) {
+            throw new PermisoException('Sin permiso de escritura en IdExterno__c');
+        }
+        if (body.containsKey('nombre') && !Schema.sObjectType.Candidatura__c.fields.Name.isUpdateable()) {
+            throw new PermisoException('Sin permiso de escritura en Name');
+        }
+        if (body.containsKey('estado') && !Schema.sObjectType.Candidatura__c.fields.Estado__c.isUpdateable()) {
+            throw new PermisoException('Sin permiso de escritura en Estado__c');
+        }
     }
 }
