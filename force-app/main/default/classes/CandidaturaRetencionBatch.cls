@@ -14,7 +14,15 @@ public with sharing class CandidaturaRetencionBatch implements Database.Batchabl
             cand.Name = 'Anonimizada';
             cand.IdExterno__c = null;
         }
-        update lote;
+        List<Database.SaveResult> resultados = Database.update(lote, false);
+        for (Integer i = 0; i < resultados.size(); i++) {
+            if (!resultados[i].isSuccess()) {
+                System.debug(
+                    LoggingLevel.ERROR,
+                    'Retención fallida: ' + lote[i].Id + ' ' + resultados[i].getErrors()[0].getStatusCode()
+                );
+            }
+        }
     }
 
     public void finish(Database.BatchableContext bc) {

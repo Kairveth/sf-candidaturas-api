@@ -1,7 +1,7 @@
-//DEMO-1003
+//DEMO-1008
 public with sharing class CandidaturaEstadoController {
 
-     @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=true)
     public static List<String> transicionesPermitidas(Id candidaturaId) {
         List<Candidatura__c> lista = [
             SELECT Estado__c FROM Candidatura__c WHERE Id = :candidaturaId WITH USER_MODE LIMIT 1
