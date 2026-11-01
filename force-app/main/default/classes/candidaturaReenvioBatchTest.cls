@@ -19,4 +19,16 @@ private class candidaturaReenvioBatchTest {
         System.assertEquals(200, [SELECT COUNT() FROM Candidatura__c WHERE EstadoEnvio__c = 'Enviado']);
         System.assertEquals(1, [SELECT COUNT() FROM Candidatura__c WHERE EstadoEnvio__c = 'Fallido']);
     }
+
+    @IsTest
+    static void programadoLanzaElReenvio() {
+        insert new Candidatura__c(Name = 'S', IdExterno__c = 'S-1', Estado__c = 'Entrevista', EstadoEnvio__c = 'Fallido');
+        candidaturaMockOk.llamadas = 0;
+        Test.setMock(HttpCalloutMock.class, new candidaturaMockOk());
+        Test.startTest();
+        new CandidaturaReenvioSchedule().execute(null);
+        Test.stopTest();
+        System.assertEquals(1, candidaturaMockOk.llamadas);
+        System.assertEquals(1, [SELECT COUNT() FROM Candidatura__c WHERE EstadoEnvio__c = 'Enviado']);
+    }
 }
